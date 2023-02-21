@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Об авторе проекта{% endblock %}
+{% block content %}
+<h1>Привет, я Артем</h1>
+<div class="row">
+  <aside class="col-12 col-md-3">
+  <br>
+  {% load static %}
+  <img src="{% static 'img/foto.jpg' %}" width="190" height="200" alt="">
+  </aside>
+  <article class="col-12 col-md-9">
+  <p>
+    <br>
+    <h4>Совсем немного обо мне:</h4>
+    <br>
+    Я скромный и ленивый, но это не точно. Когда горит дедлайн, моя скромность невероятно прогресирует, поэтому это вся информация обо мне) <br><br>
+    <a href="https://github.com/achuloshnikov/">Ссылка на мой GitHub<a>
+  </p>
+  </article>
+</div>
+{% endblock %}
