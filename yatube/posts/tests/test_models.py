@@ -2,9 +2,9 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from posts.models import Group, Post
+from yatube.settings import REDUCTION_SYMB_NUM
 
 User = get_user_model()
-
 
 class PostModelTest(TestCase):
     @classmethod
@@ -16,9 +16,9 @@ class PostModelTest(TestCase):
             text='Тестовый пост вапвдодвлопдавопдвоавдопдв',
         )
 
-    def test_models_have_correct_object_names(self):
+    def test_model_post_have_correct_object_name(self):
         """Проверяем, что у модели Post корректно работает __str__."""
-        self.assertEqual(str(self.post), self.post.text[:15])
+        self.assertEqual(str(self.post), self.post.text[:REDUCTION_SYMB_NUM])
 
 
 class GroupModelTest(TestCase):
@@ -31,6 +31,6 @@ class GroupModelTest(TestCase):
             description='Тестовое описание',
         )
 
-    def test_models_have_correct_object_names(self):
+    def test_model_group_have_correct_object_name(self):
         """Проверяем, что у модели Group корректно работает __str__."""
         self.assertEqual(str(self.group), self.group.title)

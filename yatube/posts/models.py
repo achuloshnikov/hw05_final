@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from yatube.settings import REDUCTION_SYMB_NUM
+
 User = get_user_model()
 
 
@@ -40,23 +42,23 @@ class Post(models.Model):
         auto_now_add=True,
     )
     text = models.TextField(verbose_name='текст')
-    image = models.ImageField('Картинка', upload_to='posts/', blank=True)
+    image = models.ImageField('картинка', upload_to='posts/', blank=True)
 
     class Meta:
         ordering = ('-pub_date',)
-        verbose_name = 'Пост'
-        verbose_name_plural = 'Посты'
+        verbose_name = 'пост'
+        verbose_name_plural = 'посты'
 
     def __str__(self) -> str:
-        return self.text[:15]
+        return self.text[:REDUCTION_SYMB_NUM]
 
 
 class Comment(models.Model):
     post = models.ForeignKey(
-        Post, on_delete=models.CASCADE, related_name='comments'
+        Post, on_delete=models.CASCADE, related_name='comments',
     )
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments'
+        User, on_delete=models.CASCADE, related_name='comments',
     )
     text = models.TextField(verbose_name='текст')
     created = models.DateTimeField(
@@ -65,13 +67,13 @@ class Comment(models.Model):
     )
 
     def __str__(self) -> str:
-        return self.text[:15]
+        return self.text[:REDUCTION_SYMB_NUM]
 
 
 class Follow(models.Model):
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='following'
+        User, on_delete=models.CASCADE, related_name='following',
     )
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='follower'
+        User, on_delete=models.CASCADE, related_name='follower',
     )

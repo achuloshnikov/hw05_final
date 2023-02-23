@@ -1,10 +1,10 @@
 from django.core.paginator import Paginator
 
-from yatube.settings import CONSTANT_TOP
+from yatube.settings import POSTS_TO_PAGE
 
 
-def get_page_context(queryset, request):
-    paginator = Paginator(queryset, CONSTANT_TOP)
+def page(queryset, request):
+    paginator = Paginator(queryset, POSTS_TO_PAGE)
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    return page_obj
+    page = paginator.get_page(page_number)
+    return page

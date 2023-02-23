@@ -1,12 +1,12 @@
 from http import HTTPStatus
 
+from django import forms
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
-from django import forms
-from django.core.cache import cache
 
-from posts.models import Post, Group, Follow
+from posts.models import Follow, Group, Post
 
 User = get_user_model()
 
@@ -32,7 +32,10 @@ class PostURLTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def assert_post(self, first_object):
-        """Код проверки постов"""
+        """Код проверки постов.
+        Args:
+            first_object: первый видимый пост.
+        """
         self.assertEqual(first_object.text, self.post.text)
         self.assertEqual(first_object.group.title, self.post.group.title)
         self.assertEqual(first_object.group.pk, self.post.group.pk)
@@ -76,14 +79,14 @@ class PostURLTests(TestCase):
     def test_post_detail_page_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse('posts:post_detail', kwargs={'post_id': self.post.pk}),
+            reverse('posts:post_detail', kwargs={'pk': self.post.pk}),
         )
         self.assertEqual(response.context.get('post').id, self.post.pk)
 
     def test_post_edit_page_show_correct_context(self):
         """Шаблон post_edit сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse('posts:post_edit', kwargs={'post_id': self.post.pk}),
+            reverse('posts:post_edit', kwargs={'pk': self.post.pk}),
         )
         self.assertEqual(response.context.get('post').id, self.post.pk)
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -113,11 +116,11 @@ class PaginatorViewsTest(TestCase):
             slug='test_group',
             description='test_description',
         )
-        for i in range(13):
+        for num in range(13):
             Post.objects.create(
                 author=cls.user,
                 group=cls.group,
-                text=f'Тест_текст {i}',
+                text=f'Тест_текст {num}',
             )
 
     def setUp(self):
@@ -222,8 +225,10 @@ class FollowTests(TestCase):
         cls.following_client.force_login(cls.following)
 
     def test_follow_unfollow_auth_to_other_auth(self):
-        """Авторизованный пользователь может
-        подписаться и отписаться на других пользователей"""
+        """Авторизованный пользователь может.
+
+        подписаться и отписаться на других пользователей.
+        """
         follower = User.objects.create_user(username='follower')
         follower_client = Client()
         follower_client.force_login(follower)
@@ -246,8 +251,10 @@ class FollowTests(TestCase):
         self.assertIsNone(canceled_follow)
 
     def test_follow_not_auth(self):
-        """Неавторизованный пользователь не может
-        подписаться на других пользователей"""
+        """Неавторизованный пользователь не может.
+
+        подписаться на других пользователей.
+        """
         self.client.get(
             reverse(
                 'posts:profile_follow',

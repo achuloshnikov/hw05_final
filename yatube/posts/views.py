@@ -2,113 +2,97 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from posts.forms import CommentForm, PostForm
-from posts.models import Comment, Follow, Group, Post, User
-from posts.utils import get_page_context
+from posts.models import Follow, Group, Post, User
+from posts.utils import page
 
 
 def index(request):
-    context = {
-        'page_obj': get_page_context(Post.objects.all(), request),
-    }
-    return render(request, 'posts/index.html', context)
+    return render(request, 'posts/index.html', {
+        'page_obj': page(Post.objects.select_related('group'), request),
+    })
 
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    posts = group.posts.all()
-    context = {
+    posts = group.posts.select_related('group')
+    return render(request, 'posts/group_list.html', {
         'group': group,
-        'page_obj': get_page_context(posts, request),
-    }
-    return render(request, 'posts/group_list.html', context)
+        'page_obj': page(posts, request),
+    })
 
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts_list = author.posts.all()
-    post_count = posts_list.count()
-    following = False
     if Follow.objects.filter(user=request.user.id).filter(author=author):
         following = True
-    context = {
+    else:
+        following = False
+    return render(request, 'posts/profile.html', {
         'author': author,
-        'post_count': post_count,
-        'page_obj': get_page_context(posts_list, request),
+        'page_obj': page(posts_list, request),
         'following': following,
-    }
-    return render(request, 'posts/profile.html', context)
+    })
 
 
-def post_detail(request, post_id):
-    post = get_object_or_404(Post, pk=post_id)
-    comments = Comment.objects.filter(post=post_id)
+def post_detail(request, pk):
+    post = get_object_or_404(Post, pk=pk)
     form = CommentForm(request.POST or None)
-    context = {
+    return render(request, 'posts/post_detail.html', {
         'post': post,
-        'comments': comments,
         'form': form,
-    }
-    return render(request, 'posts/post_detail.html', context)
+    })
 
 
 @login_required
 def post_create(request):
     form = PostForm(request.POST or None)
-    template = 'posts/create_post.html'
-    context = {'form': form}
-    if not request.method == 'POST':
-        return render(request, template, context)
-    if not form.is_valid():
-        return render(request, template, context)
+    if not request.method == 'POST' or not form.is_valid():
+        return render(request, 'posts/create_post.html', {'form': form})
 
-    post = form.save(commit=False)
-    post.author = request.user
-    post.save()
+    form.instance.author = request.user
+    form.save()
 
-    return redirect('posts:profile', post.author)
+    return redirect('posts:profile', form.instance.author)
 
 
 @login_required
-def post_edit(request, post_id):
-    post = get_object_or_404(Post, pk=post_id)
+def post_edit(request, pk):
+    post = get_object_or_404(Post, pk=pk)
     if post.author != request.user:
-        return redirect('posts:post_detail', post_id=post_id)
+        return redirect('posts:post_detail', pk=pk)
 
     form = PostForm(
-        request.POST or None, files=request.FILES or None, instance=post
+        request.POST or None, files=request.FILES or None, instance=post,
     )
     if form.is_valid():
         form.save()
-        return redirect('posts:post_detail', post_id=post_id)
-    context = {
+        return redirect('posts:post_detail', pk=pk)
+    return render(request, 'posts/create_post.html', {
         'post': post,
         'form': form,
         'is_edit': True,
-    }
-    return render(request, 'posts/create_post.html', context)
+    })
 
 
 @login_required
-def add_comment(request, post_id):
-    post = get_object_or_404(Post, pk=post_id)
+def add_comment(request, pk):
+    post = get_object_or_404(Post, pk=pk)
     form = CommentForm(request.POST or None)
     if form.is_valid():
-        comment = form.save(commit=False)
-        comment.author = request.user
-        comment.post = post
-        comment.save()
-    return redirect('posts:post_detail', post_id=post_id)
+        form.instance.author = request.user
+        form.instance.post = post
+        form.save()
+    return redirect('posts:post_detail', pk=pk)
 
 
 @login_required
 def follow_index(request):
     posts = Post.objects.filter(author__following__user=request.user)
-    page_obj = get_page_context(posts, request)
-    context = {
+    return render(request, 'posts/follow.html', {
         'posts': posts,
-        'page_obj': page_obj,
-    }
-    return render(request, 'posts/follow.html', context)
+        'page_obj': page(posts, request),
+    })
 
 
 @login_required

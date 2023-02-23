@@ -1,8 +1,8 @@
-from django.views.generic import CreateView
+from django.contrib.auth.views import PasswordChangeView, PasswordResetView
 from django.urls import reverse_lazy
-from django.contrib.auth.views import PasswordResetView, PasswordChangeView
+from django.views.generic import CreateView
 
-from users.forms import CreationForm, PasswordReset, PasswordChange
+from users.forms import CreationForm, PasswordChange, PasswordReset
 
 
 class SignUp(CreateView):
@@ -11,13 +11,13 @@ class SignUp(CreateView):
     template_name = 'users/signup.html'
 
 
-class PasswordReset(PasswordResetView):
+class ResetPassword(PasswordResetView):
     form_class = PasswordReset
     success_url = reverse_lazy('posts:index')
     template_name = 'users/password_reset_form.html'
 
 
-class PasswordChange(PasswordChangeView):
+class ChangePassword(PasswordChangeView):
     form_class = PasswordChange
     success_url = reverse_lazy('posts:index')
     template_name = 'users/password_change_form.html'

@@ -2,9 +2,9 @@ from http import HTTPStatus
 
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 
-from posts.models import Post, Group
+from posts.models import Group, Post
 
 User = get_user_model()
 
@@ -13,7 +13,7 @@ class PostURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.auth_user = User.objects.create_user(username='auth')
+        cls.auth_user = User.objects.create_user(username='auth_user')
         cls.author = User.objects.create_user(username='author')
         cls.group = Group.objects.create(
             title='Тест_группа',
@@ -36,15 +36,28 @@ class PostURLTests(TestCase):
             'post_create': reverse('posts:post_create'),
             'post_detail': reverse(
                 'posts:post_detail',
-                kwargs={'post_id': cls.post.pk},
+                kwargs={'pk': cls.post.pk},
             ),
             'post_edit': reverse(
                 'posts:post_edit',
-                kwargs={'post_id': cls.post.pk},
+                kwargs={'pk': cls.post.pk},
             ),
             'profile': reverse(
                 'posts:profile',
                 kwargs={'username': cls.post.author.get_username()},
+            ),
+            'add_comment': reverse(
+                'posts:add_comment',
+                kwargs={'pk': cls.post.pk},
+            ),
+            'follow_index': reverse('posts:follow_index'),
+            'profile_follow': reverse(
+                'posts:profile_follow',
+                kwargs={'username': cls.author.username}
+            ),
+             'profile_unfollow': reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': cls.author.username}
             ),
             'missing': ('something/really/weird/'),
         }
@@ -68,10 +81,17 @@ class PostURLTests(TestCase):
                 self.auth_user_client,
             ),
             (self.urls.get('post_edit'), HTTPStatus.OK, self.author_client),
+            (self.urls.get('add_comment'), HTTPStatus.FOUND, self.client),
+            (self.urls.get('follow_index'), HTTPStatus.FOUND, self.client),
+            (self.urls.get('follow_index'), HTTPStatus.OK, self.auth_user_client),
+            (self.urls.get('profile_follow'), HTTPStatus.FOUND, self.client),
+            (self.urls.get('profile_follow'), HTTPStatus.FOUND, self.author_client),
+            (self.urls.get('profile_unfollow'), HTTPStatus.FOUND, self.client),
+            (self.urls.get('profile_unfollow'), HTTPStatus.FOUND, self.author_client),
             (self.urls.get('missing'), HTTPStatus.NOT_FOUND, self.client),
         )
         for url, status, user in httpstatuses:
-            with self.subTest(url=url):
+            with self.subTest(url=url, status=status, user=user):
                 self.assertEqual(user.get(url).status_code, status)
 
     def test_templates(self) -> None:
