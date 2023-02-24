@@ -14,7 +14,7 @@ class CreationForm(UserCreationForm):
         fields = ('first_name', 'last_name', 'username', 'email')
         labels = {
             'username': 'логин пользователя',
-        } 
+        }
 
 
 class PasswordReset(PasswordResetForm):

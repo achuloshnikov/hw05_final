@@ -1,6 +1,6 @@
 from pathlib import Path
 
-#BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
 SECRET_KEY = 'ux6^+-v0a8)=2@6=549zp8o_vcapndvjsa*jlvp82((8kc%^6g'
@@ -62,7 +62,7 @@ WSGI_APPLICATION = 'yatube.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': str(BASE_DIR / "db.sqlite3"),
+        'NAME': str(BASE_DIR / 'db.sqlite3'),
     },
 }
 
@@ -93,7 +93,7 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-POSTS_TO_PAGE = 10
+QTY_POSTS_TO_PAGE = 10
 
 LOGIN_URL = 'users:login'
 

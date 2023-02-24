@@ -1,10 +1,10 @@
 from http import HTTPStatus
 
-from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
+from django.urls import reverse
 
-from posts.models import Group, Post
+from posts.models import Follow, Group, Post
 
 User = get_user_model()
 
@@ -24,6 +24,9 @@ class PostURLTests(TestCase):
             author=cls.author,
             group=cls.group,
             text='Тест_текст',
+        )
+        cls.follow = Follow.objects.create(
+            user=cls.auth_user, author=cls.author,
         )
         cls.auth_user_client = Client()
         cls.author_client = Client()
@@ -53,17 +56,29 @@ class PostURLTests(TestCase):
             'follow_index': reverse('posts:follow_index'),
             'profile_follow': reverse(
                 'posts:profile_follow',
-                kwargs={'username': cls.author.username}
+                kwargs={'username': cls.author.username},
             ),
-             'profile_unfollow': reverse(
+            'profile_unfollow': reverse(
                 'posts:profile_unfollow',
-                kwargs={'username': cls.author.username}
+                kwargs={'username': cls.author.username},
             ),
             'missing': ('something/really/weird/'),
         }
 
     def test_http_statuses(self) -> None:
         httpstatuses = (
+            (self.urls.get('add_comment'), HTTPStatus.FOUND, self.client),
+            (
+                self.urls.get('add_comment'),
+                HTTPStatus.FOUND,
+                self.auth_user_client,
+            ),
+            (self.urls.get('follow_index'), HTTPStatus.FOUND, self.client),
+            (
+                self.urls.get('follow_index'),
+                HTTPStatus.OK,
+                self.auth_user_client,
+            ),
             (self.urls.get('group'), HTTPStatus.OK, self.client),
             (self.urls.get('index'), HTTPStatus.OK, self.client),
             (self.urls.get('post_detail'), HTTPStatus.OK, self.client),
@@ -81,13 +96,18 @@ class PostURLTests(TestCase):
                 self.auth_user_client,
             ),
             (self.urls.get('post_edit'), HTTPStatus.OK, self.author_client),
-            (self.urls.get('add_comment'), HTTPStatus.FOUND, self.client),
-            (self.urls.get('follow_index'), HTTPStatus.FOUND, self.client),
-            (self.urls.get('follow_index'), HTTPStatus.OK, self.auth_user_client),
             (self.urls.get('profile_follow'), HTTPStatus.FOUND, self.client),
-            (self.urls.get('profile_follow'), HTTPStatus.FOUND, self.author_client),
+            (
+                self.urls.get('profile_follow'),
+                HTTPStatus.FOUND,
+                self.auth_user_client,
+            ),
             (self.urls.get('profile_unfollow'), HTTPStatus.FOUND, self.client),
-            (self.urls.get('profile_unfollow'), HTTPStatus.FOUND, self.author_client),
+            (
+                self.urls.get('profile_unfollow'),
+                HTTPStatus.FOUND,
+                self.auth_user_client,
+            ),
             (self.urls.get('missing'), HTTPStatus.NOT_FOUND, self.client),
         )
         for url, status, user in httpstatuses:
@@ -96,6 +116,11 @@ class PostURLTests(TestCase):
 
     def test_templates(self) -> None:
         templates = (
+            (
+                self.urls.get('follow_index'),
+                'posts/follow.html',
+                self.author_client,
+            ),
             (
                 self.urls.get('group'),
                 'posts/group_list.html',
@@ -130,6 +155,23 @@ class PostURLTests(TestCase):
     def test_redirects(self) -> None:
         redirects = (
             (
+                self.urls.get('add_comment'),
+                f"{reverse('users:login')}?next="
+                f"{self.urls.get('add_comment')}",
+                self.client,
+            ),
+            (
+                self.urls.get('add_comment'),
+                self.urls.get('post_detail'),
+                self.auth_user_client,
+            ),
+            (
+                self.urls.get('follow_index'),
+                f"{reverse('users:login')}?next="
+                f"{self.urls.get('follow_index')}",
+                self.client,
+            ),
+            (
                 self.urls.get('post_create'),
                 (
                     f"{reverse('users:login')}?next="
@@ -145,6 +187,22 @@ class PostURLTests(TestCase):
             (
                 self.urls.get('post_edit'),
                 self.urls.get('post_detail'),
+                self.auth_user_client,
+            ),
+            (
+                self.urls.get('profile_follow'),
+                self.urls.get('profile'),
+                self.auth_user_client,
+            ),
+            (
+                self.urls.get('profile_follow'),
+                f"{reverse('users:login')}?next="
+                f"{self.urls.get('profile_follow')}",
+                self.client,
+            ),
+            (
+                self.urls.get('profile_unfollow'),
+                self.urls.get('profile'),
                 self.auth_user_client,
             ),
         )

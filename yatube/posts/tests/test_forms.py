@@ -3,8 +3,8 @@ import tempfile
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from posts.models import Comment, Group, Post, User
 
+from posts.models import Comment, Group, Post, User
 from posts.tests.common import image
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -18,7 +18,7 @@ class PostCreateEditFormTests(TestCase):
         cls.author = User.objects.create_user(username='author')
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
-        
+
     def test_create_post(self):
         """Валидная форма создает запись в Post."""
         auth_user = User.objects.create_user(username='auth')
@@ -61,12 +61,11 @@ class PostCreateEditFormTests(TestCase):
             author=self.author,
             text='Тест_текст',
         )
-        data = {
-            'text': 'Измененный текст',
-        }
         auth_user_client.post(
             reverse('posts:post_edit', kwargs={'pk': test_post.pk}),
-            data=data,
+            data={
+                'text': 'Измененный текст',
+            },
             follow=True,
         )
         edit_post = Post.objects.get(pk=test_post.pk)
@@ -78,12 +77,11 @@ class PostCreateEditFormTests(TestCase):
             author=self.author,
             text='Тест_текст',
         )
-        data = {
-            'text': 'Измененный текст',
-        }
         self.client.post(
             reverse('posts:post_edit', kwargs={'pk': test_post.pk}),
-            data=data,
+            data={
+                'text': 'Измененный текст',
+            },
             follow=True,
         )
         edit_post = Post.objects.get(pk=test_post.pk)
@@ -91,10 +89,13 @@ class PostCreateEditFormTests(TestCase):
 
     def test_create_post_by_unauth(self):
         """Неавторизованный пользователь не может создать пост."""
-        data = {
-            'text': 'Тестовый текст',
-        }
-        self.client.post(reverse('posts:post_create'), data=data, follow=True)
+        self.client.post(
+            reverse('posts:post_create'),
+            data={
+                'text': 'Тестовый текст',
+            },
+            follow=True,
+        )
         self.assertEqual(Post.objects.count(), 0)
 
     def test_edit_post_by_author(self):
@@ -117,6 +118,7 @@ class PostCreateEditFormTests(TestCase):
         data = {
             'group': edit_group.id,
             'text': 'Измененный текст',
+            'image': image,
         }
         self.author_client.post(
             reverse('posts:post_edit', kwargs={'pk': test_post.pk}),
@@ -126,6 +128,7 @@ class PostCreateEditFormTests(TestCase):
         edit_post = Post.objects.get(pk=test_post.pk)
         self.assertEqual(edit_post.group.id, data['group'])
         self.assertEqual(edit_post.text, data['text'])
+        self.assertTrue(Post.objects.filter(image='posts/small.gif').exists)
 
     def test_new_post_following_count(self):
         """Новый пост пояляется для в ленте подписчиков."""
@@ -142,7 +145,8 @@ class PostCreateEditFormTests(TestCase):
         )
         auth_user_client.post(
             reverse(
-                'posts:profile_follow', kwargs={'username': self.author.username}
+                'posts:profile_follow',
+                kwargs={'username': self.author.username},
             ),
         )
         self.assertEqual(Post.objects.count(), 1)

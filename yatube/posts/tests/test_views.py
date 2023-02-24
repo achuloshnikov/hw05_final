@@ -263,3 +263,48 @@ class FollowTests(TestCase):
         )
         new_follow = Follow.objects.last()
         self.assertIsNone(new_follow)
+
+    def test_follow_to_myself(self):
+        """Пользователь не может подписаться на себя."""
+        self.following_client.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.following.username},
+            ),
+        )
+        new_follow = Follow.objects.last()
+        self.assertIsNone(new_follow)
+
+    def test_follow_not_auth_to_not_auth(self):
+        """Аноним не может подписаться на анонима."""
+        self.client.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.client},
+            ),
+        )
+        new_follow = Follow.objects.last()
+        self.assertIsNone(new_follow)
+
+    def test_twice_follow_auth_to_other_auth(self):
+        """Авторизованный пользователь не может.
+
+        подписаться на другого пользователся несколько раз.
+        """
+        follower = User.objects.create_user(username='follower')
+        follower_client = Client()
+        follower_client.force_login(follower)
+        follower_client.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.following.username},
+            ),
+        )
+        follower_client.get(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.following.username},
+            ),
+        )
+        new_follows = Follow.objects.all()
+        self.assertEqual(new_follows.count(), 1)
